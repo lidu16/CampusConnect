@@ -9,10 +9,15 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import { useRootNavigation } from '../navigation/useRootNavigation';
 import { createAnnouncement } from '../services/admin';
 import { useAuth } from '../context/AuthContext';
+import CustomButton from '../components/CustomButton';
+import { theme } from '../theme';
+import { showAlert } from '../utils/alert';
 
-const CreateAnnouncementScreen = ({ navigation }: any) => {
+const CreateAnnouncementScreen = () => {
+  const { goBack } = useRootNavigation();
   const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -23,47 +28,42 @@ const CreateAnnouncementScreen = ({ navigation }: any) => {
 
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showAlert('Missing Fields', 'Please fill in title and content.');
       return;
     }
 
     setLoading(true);
     try {
       await createAnnouncement({
-        title,
-        content,
+        title: title.trim(),
+        content: content.trim(),
         category,
         author: user?.displayName || user?.email || 'Admin',
       });
-      Alert.alert('Success', 'Announcement published!');
-      navigation.goBack();
+      showAlert('Success', 'Announcement published!');
+      goBack();
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      showAlert('Error', error.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>📢 Create Announcement</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Text style={styles.title}>Create Announcement</Text>
 
       <Text style={styles.label}>Title</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter announcement title"
-        value={title}
-        onChangeText={setTitle}
-      />
+      <TextInput style={styles.input} placeholder="Announcement title" value={title} onChangeText={setTitle} />
 
       <Text style={styles.label}>Content</Text>
       <TextInput
         style={[styles.input, styles.textArea]}
-        placeholder="Enter announcement content"
+        placeholder="Write your announcement..."
         value={content}
         onChangeText={setContent}
         multiline
-        numberOfLines={4}
+        numberOfLines={5}
       />
 
       <Text style={styles.label}>Category</Text>
@@ -74,22 +74,16 @@ const CreateAnnouncementScreen = ({ navigation }: any) => {
             style={[styles.categoryButton, category === cat && styles.categoryActive]}
             onPress={() => setCategory(cat)}
           >
-            <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>
-              {cat}
-            </Text>
+            <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>{cat}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <TouchableOpacity
-        style={styles.submitButton}
-        onPress={handleSubmit}
-        disabled={loading}
-      >
+      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.submitButtonText}>📤 Publish Announcement</Text>
+          <Text style={styles.submitButtonText}>Publish Announcement</Text>
         )}
       </TouchableOpacity>
     </ScrollView>
@@ -97,38 +91,39 @@ const CreateAnnouncementScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#2c3e50', marginBottom: 20 },
-  label: { fontSize: 16, fontWeight: '600', color: '#2c3e50', marginBottom: 8 },
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  content: { padding: 20, paddingBottom: 40 },
+  title: { ...theme.typography.h2, color: theme.colors.text, marginBottom: 20 },
+  label: { ...theme.typography.label, color: theme.colors.text, marginBottom: 8 },
   input: {
-    borderWidth: 1,
-    borderColor: '#bdc3c7',
-    borderRadius: 8,
-    padding: 12,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    padding: 14,
     fontSize: 16,
     marginBottom: 16,
+    backgroundColor: theme.colors.surface,
+    color: theme.colors.text,
   },
-  textArea: { height: 120, textAlignVertical: 'top' },
-  categoryContainer: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 },
+  textArea: { height: 130, textAlignVertical: 'top' },
+  categoryContainer: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16, gap: 8 },
   categoryButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#ecf0f1',
-    marginRight: 8,
-    marginBottom: 8,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.surfaceAlt,
   },
-  categoryActive: { backgroundColor: '#3498db' },
-  categoryText: { color: '#2c3e50' },
+  categoryActive: { backgroundColor: theme.colors.primary },
+  categoryText: { color: theme.colors.textSecondary, fontWeight: '600' },
   categoryTextActive: { color: '#fff' },
   submitButton: {
-    backgroundColor: '#3498db',
+    backgroundColor: theme.colors.primary,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     alignItems: 'center',
     marginTop: 8,
   },
-  submitButtonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  submitButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
 
 export default CreateAnnouncementScreen;

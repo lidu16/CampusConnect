@@ -1,0 +1,53 @@
+export const theme = {
+  colors: {
+    primary: '#6366F1',
+    primaryDark: '#4F46E5',
+    primaryLight: '#818CF8',
+    accent: '#F59E0B',
+    accentDark: '#D97706',
+    background: '#F8F7FF',
+    surface: '#FFFFFF',
+    surfaceAlt: '#EDE9FE',
+    text: '#1E293B',
+    textSecondary: '#64748B',
+    textMuted: '#94A3B8',
+    border: '#E2E8F0',
+    success: '#10B981',
+    danger: '#EF4444',
+    warning: '#F59E0B',
+    info: '#3B82F6',
+    gradientStart: '#4F46E5',
+    gradientEnd: '#7C3AED',
+    gold: '#FBBF24',
+    cardShadow: 'rgba(79, 70, 229, 0.12)',
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+  radius: {
+    sm: 8,
+    md: 12,
+    lg: 16,
+    xl: 24,
+    full: 999,
+  },
+  typography: {
+    h1: { fontSize: 28, fontWeight: '800' as const },
+    h2: { fontSize: 22, fontWeight: '700' as const },
+    h3: { fontSize: 18, fontWeight: '700' as const },
+    body: { fontSize: 16, fontWeight: '400' as const },
+    caption: { fontSize: 13, fontWeight: '500' as const },
+    label: { fontSize: 14, fontWeight: '600' as const },
+  },
+};
+
+export const categoryColors: Record<string, { bg: string; text: string }> = {
+  General: { bg: '#EDE9FE', text: '#6366F1' },
+  Academic: { bg: '#DBEAFE', text: '#2563EB' },
+  Event: { bg: '#FEF3C7', text: '#D97706' },
+  Urgent: { bg: '#FEE2E2', text: '#DC2626' },
+};

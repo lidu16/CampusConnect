@@ -10,6 +10,7 @@ import {
   doc
 } from 'firebase/firestore';
 import { auth } from './firebase';
+import { isUserAdmin } from './admin';
 
 export interface Material {
   id: string;
@@ -41,31 +42,25 @@ export const getMaterials = async (): Promise<Material[]> => {
   }
 };
 
-// Upload a new material
+// Upload a new material (admin only — use admin.createMaterial instead)
 export const uploadMaterial = async (data: Omit<Material, 'id' | 'createdAt'>) => {
-  try {
-    const user = auth.currentUser;
-    if (!user) throw new Error('You must be logged in to upload materials');
-    
-    const docRef = await addDoc(collection(firestore, COLLECTION), {
-      ...data,
-      uploadedBy: user.email || 'Anonymous',
-      createdAt: Timestamp.now(),
-    });
-    return docRef.id;
-  } catch (error) {
-    console.error('Error uploading material:', error);
-    throw error;
-  }
+  const isAdmin = await isUserAdmin();
+  if (!isAdmin) throw new Error('Only admins can upload materials');
+
+  const user = auth.currentUser;
+  if (!user) throw new Error('You must be logged in to upload materials');
+
+  const docRef = await addDoc(collection(firestore, COLLECTION), {
+    ...data,
+    uploadedBy: user.email || 'Anonymous',
+    createdAt: Timestamp.now(),
+  });
+  return docRef.id;
 };
 
-// Delete a material
-export const deleteMaterial = async (id: string) => {
-  try {
-    await deleteDoc(doc(firestore, COLLECTION, id));
-    console.log('Material deleted successfully');
-  } catch (error) {
-    console.error('Error deleting material:', error);
-    throw error;
-  }
+export const deleteMaterialFromCollection = async (id: string) => {
+  const isAdmin = await isUserAdmin();
+  if (!isAdmin) throw new Error('Only admins can delete materials');
+
+  await deleteDoc(doc(firestore, COLLECTION, id));
 };

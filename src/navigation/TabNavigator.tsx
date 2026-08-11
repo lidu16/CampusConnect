@@ -1,7 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { View } from 'react-native';
 import { useAdmin } from '../context/AdminContext';
 import HomeScreen from '../screens/HomeScreen';
 import EventsScreen from '../screens/EventsScreen';
@@ -9,6 +8,7 @@ import ScheduleScreen from '../screens/ScheduleScreen';
 import MaterialsScreen from '../screens/MaterialsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import AdminPanelScreen from '../screens/AdminPanelScreen';
+import { theme } from '../theme';
 
 export type TabParamList = {
   Home: undefined;
@@ -28,36 +28,46 @@ const TabNavigator = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: true,
-        tabBarActiveTintColor: '#3498db',
-        tabBarInactiveTintColor: '#95a5a6',
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap = 'home';
-          if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
-          else if (route.name === 'Events') iconName = focused ? 'calendar' : 'calendar-outline';
-          else if (route.name === 'Schedule') iconName = focused ? 'time' : 'time-outline';
-          else if (route.name === 'Materials') iconName = focused ? 'document' : 'document-outline';
-          else if (route.name === 'AdminPanel') iconName = focused ? 'settings' : 'settings-outline';
-          else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
-          return <Ionicons name={iconName} size={size} color={color} />;
+        headerStyle: { backgroundColor: theme.colors.primaryDark },
+        headerTintColor: '#fff',
+        headerTitleStyle: { fontWeight: '700', fontSize: 18 },
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textMuted,
+        tabBarStyle: {
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.border,
+          paddingBottom: 4,
+          height: 58,
         },
-        headerRight: () => (
-          <View style={{ marginRight: 16 }}>
-            <Ionicons name="notifications-outline" size={24} color="#2c3e50" />
-          </View>
-        ),
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarIcon: ({ focused, color, size }) => {
+          const icons: Record<string, [string, string]> = {
+            Home: ['home', 'home-outline'],
+            Events: ['calendar', 'calendar-outline'],
+            Schedule: ['time', 'time-outline'],
+            Materials: ['document', 'document-outline'],
+            AdminPanel: ['shield-checkmark', 'shield-outline'],
+            Profile: ['person', 'person-outline'],
+          };
+          const [active, inactive] = icons[route.name] || ['ellipse', 'ellipse-outline'];
+          return (
+            <Ionicons
+              name={(focused ? active : inactive) as keyof typeof Ionicons.glyphMap}
+              size={size}
+              color={color}
+            />
+          );
+        },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
-      <Tab.Screen name="Events" component={EventsScreen} options={{ title: 'Events' }} />
-      <Tab.Screen name="Schedule" component={ScheduleScreen} options={{ title: 'Schedule' }} />
-      <Tab.Screen name="Materials" component={MaterialsScreen} options={{ title: 'Materials' }} />
-      
-      {/* Admin Panel — only visible to admins */}
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Announcements' }} />
+      <Tab.Screen name="Events" component={EventsScreen} />
+      <Tab.Screen name="Schedule" component={ScheduleScreen} />
+      <Tab.Screen name="Materials" component={MaterialsScreen} />
       {isAdmin && (
         <Tab.Screen name="AdminPanel" component={AdminPanelScreen} options={{ title: 'Admin' }} />
       )}
-      
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 };

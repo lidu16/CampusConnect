@@ -15,12 +15,15 @@ import {
 } from 'firebase/firestore';
 import { auth } from './firebase';
 import { getUserProfile } from './user';
+import { isSuperAdminEmail } from '../config/admin';
 
 // Check if the current user is admin
 export const isUserAdmin = async (): Promise<boolean> => {
   const user = auth.currentUser;
   if (!user) return false;
-  
+
+  if (isSuperAdminEmail(user.email)) return true;
+
   try {
     const profile = await getUserProfile(user.uid);
     return profile?.isAdmin || false;
@@ -129,4 +132,34 @@ export const deleteMaterial = async (id: string) => {
   if (!isAdmin) throw new Error('Only admins can delete materials');
   
   await deleteDoc(doc(firestore, 'materials', id));
+};
+
+// --- Schedule Admin Functions ---
+
+export const createScheduleItem = async (data: {
+  courseName: string;
+  instructor: string;
+  location: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+}) => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('You must be logged in');
+
+  const isAdmin = await isUserAdmin();
+  if (!isAdmin) throw new Error('Only admins can create schedule items');
+
+  const docRef = await addDoc(collection(firestore, 'schedule'), {
+    ...data,
+    createdAt: serverTimestamp(),
+  });
+  return docRef.id;
+};
+
+export const deleteScheduleItem = async (id: string) => {
+  const isAdmin = await isUserAdmin();
+  if (!isAdmin) throw new Error('Only admins can delete schedule items');
+
+  await deleteDoc(doc(firestore, 'schedule', id));
 };

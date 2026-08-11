@@ -1,32 +1,58 @@
 import { firestore } from './firebase';
-import { doc, setDoc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import { auth } from './firebase';
+import { isSuperAdminEmail } from '../config/admin';
 
 export interface UserProfile {
   uid: string;
   email: string;
   displayName?: string;
   photoURL?: string;
-  isAdmin?: boolean;  // ← NEW: Admin flag
+  isAdmin?: boolean;
   createdAt?: Date;
 }
 
-// Save user data to Firestore (called after signup)
+const requireCurrentUserAdmin = async (): Promise<void> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('You must be logged in');
+
+  const profile = await getUserProfile(user.uid);
+  if (!profile?.isAdmin) {
+    throw new Error('Only admins can perform this action');
+  }
+};
+
 export const saveUserProfile = async (data: Partial<UserProfile>) => {
   const user = auth.currentUser;
   if (!user) throw new Error('No user logged in');
 
   const userRef = doc(firestore, 'users', user.uid);
-  await setDoc(userRef, {
+  const existing = await getDoc(userRef);
+  const email = user.email || data.email || '';
+  const isSuperAdmin = isSuperAdminEmail(email);
+
+  const profileData: Record<string, unknown> = {
     uid: user.uid,
     email: user.email,
-    isAdmin: false, // Default: not admin
-    ...data,
     updatedAt: new Date(),
-  }, { merge: true });
+  };
+
+  if (!existing.exists()) {
+    profileData.isAdmin = isSuperAdmin;
+    profileData.createdAt = new Date();
+  }
+
+  // Super admin is always admin on every login
+  if (isSuperAdmin) {
+    profileData.isAdmin = true;
+  }
+
+  if (data.displayName !== undefined) profileData.displayName = data.displayName;
+  if (data.photoURL !== undefined) profileData.photoURL = data.photoURL;
+
+  await setDoc(userRef, profileData, { merge: true });
 };
 
-// Get user profile from Firestore
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
   try {
     const userRef = doc(firestore, 'users', uid);
@@ -41,36 +67,37 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
   }
 };
 
-// Update user profile
 export const updateUserProfile = async (data: Partial<UserProfile>) => {
   const user = auth.currentUser;
   if (!user) throw new Error('No user logged in');
 
+  const { isAdmin: _ignored, ...safeData } = data;
   const userRef = doc(firestore, 'users', user.uid);
   await updateDoc(userRef, {
-    ...data,
+    ...safeData,
     updatedAt: new Date(),
   });
 };
 
-// Get all users (Admin only)
 export const getAllUsers = async (): Promise<UserProfile[]> => {
+  await requireCurrentUserAdmin();
+
   try {
     const usersRef = collection(firestore, 'users');
     const snapshot = await getDocs(usersRef);
     const users: UserProfile[] = [];
-    snapshot.forEach((doc) => {
-      users.push({ uid: doc.id, ...doc.data() } as UserProfile);
+    snapshot.forEach((docSnap) => {
+      users.push({ uid: docSnap.id, ...docSnap.data() } as UserProfile);
     });
-    return users;
+    return users.sort((a, b) => (a.email || '').localeCompare(b.email || ''));
   } catch (error) {
     console.error('Error fetching users:', error);
     throw error;
   }
 };
 
-// Grant admin privileges to a user (Admin only)
 export const grantAdminRole = async (uid: string): Promise<void> => {
+  await requireCurrentUserAdmin();
   const userRef = doc(firestore, 'users', uid);
   await updateDoc(userRef, {
     isAdmin: true,
@@ -78,8 +105,19 @@ export const grantAdminRole = async (uid: string): Promise<void> => {
   });
 };
 
-// Revoke admin privileges from a user (Admin only)
 export const revokeAdminRole = async (uid: string): Promise<void> => {
+  await requireCurrentUserAdmin();
+
+  const currentUser = auth.currentUser;
+  if (currentUser?.uid === uid) {
+    throw new Error('You cannot revoke your own admin privileges');
+  }
+
+  const targetProfile = await getUserProfile(uid);
+  if (isSuperAdminEmail(targetProfile?.email)) {
+    throw new Error('Cannot revoke admin from the super admin account');
+  }
+
   const userRef = doc(firestore, 'users', uid);
   await updateDoc(userRef, {
     isAdmin: false,
@@ -87,19 +125,14 @@ export const revokeAdminRole = async (uid: string): Promise<void> => {
   });
 };
 
-// Delete a user (Admin only)
 export const deleteUser = async (uid: string): Promise<void> => {
-  try {
-    // Delete from Firestore
-    const userRef = doc(firestore, 'users', uid);
-    await deleteDoc(userRef);
-    
-    // Delete from Firebase Authentication
-    // Note: This requires Admin SDK or Cloud Function
-    // We'll handle this with a Cloud Function later
-    console.log('User deleted from Firestore:', uid);
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    throw error;
+  await requireCurrentUserAdmin();
+
+  const currentUser = auth.currentUser;
+  if (currentUser?.uid === uid) {
+    throw new Error('You cannot delete your own account');
   }
+
+  const userRef = doc(firestore, 'users', uid);
+  await deleteDoc(userRef);
 };

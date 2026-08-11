@@ -18,23 +18,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      
-      // If user exists, save their profile to Firestore
+
       if (currentUser) {
         try {
           await saveUserProfile({
             uid: currentUser.uid,
             email: currentUser.email || '',
           });
-          console.log('✅ User profile saved to Firestore');
         } catch (error) {
           console.error('Error saving user profile:', error);
         }
       }
-      
+
       setLoading(false);
     });
-    return unsubscribe;
+
+    return () => unsubscribe();
   }, []);
 
   return (

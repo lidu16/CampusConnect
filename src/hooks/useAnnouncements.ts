@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { firestore } from '../services/firebase';
-import { collection, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, Timestamp, where } from 'firebase/firestore';
 
 export interface Announcement {
   id: string;
@@ -8,17 +8,27 @@ export interface Announcement {
   content: string;
   author: string;
   createdAt: Timestamp;
-  category?: string;
+  category?: string; // 'General' | 'Academic' | 'Event' | 'Urgent'
+  priority?: 'low' | 'medium' | 'high';
 }
 
-export const useAnnouncements = () => {
+export const useAnnouncements = (category?: string) => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     setLoading(true);
-    const q = query(collection(firestore, 'announcements'), orderBy('createdAt', 'desc'));
+    let q;
+    if (category) {
+      q = query(
+        collection(firestore, 'announcements'),
+        where('category', '==', category),
+        orderBy('createdAt', 'desc')
+      );
+    } else {
+      q = query(collection(firestore, 'announcements'), orderBy('createdAt', 'desc'));
+    }
     
     const unsubscribe = onSnapshot(q, 
       (snapshot) => {
@@ -37,8 +47,8 @@ export const useAnnouncements = () => {
       }
     );
 
-    return unsubscribe; // Cleanup on unmount
-  }, []);
+    return unsubscribe;
+  }, [category]);
 
   return { announcements, loading, error };
 };

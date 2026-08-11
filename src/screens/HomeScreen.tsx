@@ -1,34 +1,27 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
-import { getAnnouncements, Announcement } from '../services/announcements';
+import React from 'react';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { useAnnouncements } from '../hooks/useAnnouncements';
 
 const HomeScreen = () => {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { announcements, loading, error } = useAnnouncements();
 
-  const loadAnnouncements = async () => {
-    try {
-      const data = await getAnnouncements();
-      setAnnouncements(data);
-    } catch (error) {
-      console.error('Failed to load announcements:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#3498db" />
+      </View>
+    );
+  }
 
-  useEffect(() => {
-    loadAnnouncements();
-  }, []);
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>Failed to load announcements</Text>
+      </View>
+    );
+  }
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadAnnouncements();
-  };
-
-  const renderItem = ({ item }: { item: Announcement }) => (
+  const renderItem = ({ item }: { item: any }) => (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>{item.title}</Text>
       <Text style={styles.cardContent}>{item.content}</Text>
@@ -41,14 +34,6 @@ const HomeScreen = () => {
     </View>
   );
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#3498db" />
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       <FlatList
@@ -56,9 +41,6 @@ const HomeScreen = () => {
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
         ListEmptyComponent={
           <View style={styles.center}>
             <Text style={styles.emptyText}>No announcements yet.</Text>
@@ -90,6 +72,7 @@ const styles = StyleSheet.create({
   cardDate: { fontSize: 12, color: '#95a5a6' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { fontSize: 16, color: '#95a5a6' },
+  errorText: { fontSize: 16, color: 'red' },
 });
 
 export default HomeScreen;

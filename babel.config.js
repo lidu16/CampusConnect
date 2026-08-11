@@ -8,7 +8,10 @@ module.exports = function(api) {
         path: '.env',
         safe: false,
         allowUndefined: true,
-      }]
+      }],
+      // Add this for Hermes compatibility:
+      '@babel/plugin-transform-private-methods',
+      '@babel/plugin-transform-private-property-in-object'
     ]
   };
 };

@@ -11,21 +11,29 @@ const LoginScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
+  console.log("🔵 Login button was clicked!"); // Log 1: Button press
 
-    setLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // Success! AuthContext will auto-update.
-    } catch (error: any) {
-      Alert.alert('Login Failed', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!email || !password) {
+    alert('⚠️ Please fill in all fields');
+    console.log("⚠️ Empty fields detected");
+    return;
+  }
+
+  console.log("🟡 Attempting login with email:", email);
+  setLoading(true);
+
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    console.log("🟢 Login SUCCESS! User:", userCredential.user.email);
+    // AuthContext will handle the rest
+  } catch (error: any) {
+    console.error("🔴 Login FAILED:", error);
+    alert('❌ Login Failed: ' + error.message);
+  } finally {
+    setLoading(false);
+    console.log("⚪ Loading state reset.");
+  }
+};
 
   return (
     <View style={styles.container}>

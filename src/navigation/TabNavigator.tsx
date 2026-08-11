@@ -2,11 +2,13 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
+import { useAdmin } from '../context/AdminContext';
 import HomeScreen from '../screens/HomeScreen';
 import EventsScreen from '../screens/EventsScreen';
 import ScheduleScreen from '../screens/ScheduleScreen';
-import ProfileScreen from '../screens/ProfileScreen';
 import MaterialsScreen from '../screens/MaterialsScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import AdminPanelScreen from '../screens/AdminPanelScreen';
 
 export type TabParamList = {
   Home: undefined;
@@ -14,11 +16,14 @@ export type TabParamList = {
   Schedule: undefined;
   Materials: undefined;
   Profile: undefined;
+  AdminPanel: undefined;
 };
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
 const TabNavigator = () => {
+  const { isAdmin } = useAdmin();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -31,6 +36,7 @@ const TabNavigator = () => {
           else if (route.name === 'Events') iconName = focused ? 'calendar' : 'calendar-outline';
           else if (route.name === 'Schedule') iconName = focused ? 'time' : 'time-outline';
           else if (route.name === 'Materials') iconName = focused ? 'document' : 'document-outline';
+          else if (route.name === 'AdminPanel') iconName = focused ? 'settings' : 'settings-outline';
           else if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
@@ -45,6 +51,12 @@ const TabNavigator = () => {
       <Tab.Screen name="Events" component={EventsScreen} options={{ title: 'Events' }} />
       <Tab.Screen name="Schedule" component={ScheduleScreen} options={{ title: 'Schedule' }} />
       <Tab.Screen name="Materials" component={MaterialsScreen} options={{ title: 'Materials' }} />
+      
+      {/* Admin Panel — only visible to admins */}
+      {isAdmin && (
+        <Tab.Screen name="AdminPanel" component={AdminPanelScreen} options={{ title: 'Admin' }} />
+      )}
+      
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
     </Tab.Navigator>
   );

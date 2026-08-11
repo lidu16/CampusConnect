@@ -26,6 +26,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             uid: currentUser.uid,
             email: currentUser.email || '',
           });
+          console.log('✅ User profile saved to Firestore');
         } catch (error) {
           console.error('Error saving user profile:', error);
         }

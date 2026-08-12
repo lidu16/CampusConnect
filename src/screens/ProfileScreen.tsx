@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 12 },
   infoContent: { flex: 1 },
   label: { fontSize: 12, color: theme.colors.textMuted, marginBottom: 2 },
-  value: { fontSize: 15, fontWeight: '600', color: theme.colors.text },
+  value:  { fontSize: 15, fontWeight: '600', color: theme.colors.text },
 });
 
 export default ProfileScreen;
